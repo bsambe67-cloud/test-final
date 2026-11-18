@@ -1018,6 +1018,13 @@ textarea:focus-visible {
   font-size: 10px;
 }
 
+.order-notification-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .order-email-status {
   padding: 6px 8px;
   color: #6c5726;

@@ -1,7 +1,9 @@
 // Adresse de l'API backend
-export const API_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api"
-).replace(/\/$/, "");
+export const API_URL =
+  (import.meta.env.VITE_API_URL || "https://bs3-backend.onrender.com/api").replace(
+    /\/$/,
+    ""
+  );
 
 // Récupérer le jeton de connexion de l'administrateur
 function getAuthHeaders() {

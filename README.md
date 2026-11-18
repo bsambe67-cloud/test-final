@@ -65,6 +65,20 @@ La vérification ne transmet aucun e-mail. Si Gmail répond avec une erreur d'au
 
 Un clic sur un produit ouvre sa page de détail. Le client peut l'ajouter au panier, puis envoyer tous les articles du panier comme une commande. La commande est conservée dans MongoDB et apparaît dans la section « Commandes reçues » de l'espace administrateur. L'envoi par e-mail est fait par le serveur ; son état est affiché dans l'espace admin. Sans configuration SMTP valide, la commande reste enregistrée et consultable dans l'espace admin, mais l'e-mail ne peut pas être transmis.
 
+### Notifications des commandes par SMS
+
+Le backend peut envoyer un SMS de notification via Twilio. Configurez ces variables dans backend/.env et dans les variables d'environnement de l'hebergeur :
+
+```env
+SMS_PROVIDER=twilio
+SMS_NOTIFICATION_TO=+221XXXXXXXXX
+TWILIO_ACCOUNT_SID=votre_account_sid
+TWILIO_AUTH_TOKEN=votre_auth_token
+TWILIO_SMS_SENDER=BS3
+```
+
+Activez l'envoi vers le Senegal dans les permissions geographiques Twilio. Pour Orange et Expresso, Twilio exige un Sender ID alphanumerique enregistre ; utilisez dans TWILIO_SMS_SENDER le nom effectivement approuve. Sans les identifiants et le Sender ID approuve, la commande reste enregistree mais aucun SMS n'est emis. Le statut SMS apparait dans l'espace administrateur. Gardez les identifiants Twilio uniquement dans la configuration privee du backend, jamais dans le frontend.
+
 ## 2. Installer le frontend
 
 Ouvrez un deuxième terminal :

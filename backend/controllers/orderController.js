@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { sendOrderNotification } from "../services/orderEmail.js";
+import { sendOrderSmsNotification } from "../services/orderSms.js";
 
 function validEmail(value) {
   return !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -79,20 +80,41 @@ export async function createOrder(req, res, next) {
       total: orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
     });
 
-    try {
-      order.emailNotification = await sendOrderNotification(order);
-    } catch (emailError) {
-      order.emailNotification = "failed";
-      console.error(`E-mail de notification de commande ${order._id} non envoyé :`, emailError);
+    const [emailResult, smsResult] = await Promise.allSettled([
+      sendOrderNotification(order),
+      sendOrderSmsNotification(order)
+    ]);
+
+    order.emailNotification = emailResult.status === "fulfilled" ? emailResult.value : "failed";
+    if (emailResult.status === "rejected") {
+      console.error(
+        `Order email notification ${order._id} failed:`,
+        emailResult.reason
+      );
+    }
+    order.smsNotification = smsResult.status === "fulfilled" ? smsResult.value : "failed";
+    if (smsResult.status === "rejected") {
+      console.error(`Order SMS notification ${order._id} failed:`, smsResult.reason);
     }
     await order.save();
 
+    const sentNotifications = [order.emailNotification, order.smsNotification].filter((status) => status === "sent");
+    const message = sentNotifications.length === 2
+      ? "Votre commande a ete enregistree et transmise a BS3 par e-mail et SMS."
+      : order.smsNotification === "sent"
+        ? "Votre commande a ete enregistree et une notification SMS a ete transmise a BS3."
+        : order.emailNotification === "sent"
+          ? "Votre commande a ete enregistree et transmise a BS3 par e-mail."
+          : "Votre commande a ete enregistree. BS3 la retrouvera dans l'espace administrateur.";
+
     res.status(201).json({
       success: true,
-      message: order.emailNotification === "sent"
-        ? "Votre commande a été enregistrée et transmise à BS3."
-        : "Votre commande a été enregistrée. L'e-mail de notification n'a pas pu être envoyé ; BS3 la retrouvera dans l'espace administrateur.",
-      data: { id: order._id, emailNotification: order.emailNotification }
+      message,
+      data: {
+        id: order._id,
+        emailNotification: order.emailNotification,
+        smsNotification: order.smsNotification
+      }
     });
   } catch (error) {
     next(error);

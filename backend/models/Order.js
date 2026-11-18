@@ -29,6 +29,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ["sent", "failed", "not_configured"],
       default: "not_configured"
+    },
+    smsNotification: {
+      type: String,
+      enum: ["sent", "failed", "not_configured"],
+      default: "not_configured"
     }
   },
   { timestamps: true }

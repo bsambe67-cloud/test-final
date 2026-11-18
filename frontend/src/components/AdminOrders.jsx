@@ -8,6 +8,12 @@ const emailStatus = {
   not_configured: "E-mail non configuré"
 };
 
+const smsStatus = {
+  sent: "SMS envoye",
+  failed: "Echec du SMS",
+  not_configured: "SMS non configure"
+};
+
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,9 +66,14 @@ export default function AdminOrders() {
                     <strong>{items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}</strong>
                     <small>{new Date(order.createdAt).toLocaleString("fr-FR")}</small>
                   </div>
-                  <span className={`order-email-status ${order.emailNotification}`}>
-                    {emailStatus[order.emailNotification] || "Statut e-mail inconnu"}
-                  </span>
+                  <div className="order-notification-statuses">
+                    <span className={`order-email-status ${order.emailNotification}`}>
+                      {emailStatus[order.emailNotification] || "Statut e-mail inconnu"}
+                    </span>
+                    <span className={`order-email-status ${order.smsNotification || "not_configured"}`}>
+                      {smsStatus[order.smsNotification] || "Statut SMS inconnu"}
+                    </span>
+                  </div>
                 </div>
                 <div className="order-admin-details">
                   <span><strong>Client :</strong> {order.customer.name}</span>
