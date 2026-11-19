@@ -3,6 +3,7 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { sendOrderNotification } from "../services/orderEmail.js";
 import { sendOrderSmsNotification } from "../services/orderSms.js";
+import { sendOrderWhatsAppNotification } from "../services/orderWhatsApp.js";
 
 function validEmail(value) {
   return !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -80,9 +81,10 @@ export async function createOrder(req, res, next) {
       total: orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
     });
 
-    const [emailResult, smsResult] = await Promise.allSettled([
+    const [emailResult, smsResult, whatsappResult] = await Promise.allSettled([
       sendOrderNotification(order),
-      sendOrderSmsNotification(order)
+      sendOrderSmsNotification(order),
+      sendOrderWhatsAppNotification(order)
     ]);
 
     order.emailNotification = emailResult.status === "fulfilled" ? emailResult.value : "failed";
@@ -96,16 +98,23 @@ export async function createOrder(req, res, next) {
     if (smsResult.status === "rejected") {
       console.error(`Order SMS notification ${order._id} failed:`, smsResult.reason);
     }
+    order.whatsappNotification = whatsappResult.status === "fulfilled" ? whatsappResult.value : "failed";
+    if (whatsappResult.status === "rejected") {
+      console.error(`Order WhatsApp notification ${order._id} failed:`, whatsappResult.reason);
+    }
     await order.save();
 
-    const sentNotifications = [order.emailNotification, order.smsNotification].filter((status) => status === "sent");
-    const message = sentNotifications.length === 2
-      ? "Votre commande a ete enregistree et transmise a BS3 par e-mail et SMS."
-      : order.smsNotification === "sent"
-        ? "Votre commande a ete enregistree et une notification SMS a ete transmise a BS3."
-        : order.emailNotification === "sent"
-          ? "Votre commande a ete enregistree et transmise a BS3 par e-mail."
-          : "Votre commande a ete enregistree. BS3 la retrouvera dans l'espace administrateur.";
+    const emailSent = order.emailNotification === "sent";
+    const smsSent = order.smsNotification === "sent";
+    const whatsappSent = order.whatsappNotification === "sent";
+    const channels = [
+      emailSent && "e-mail",
+      whatsappSent && "WhatsApp",
+      smsSent && "SMS"
+    ].filter(Boolean);
+    const message = channels.length
+      ? `Votre commande a ete enregistree. Notification envoyee a BS3 par ${channels.join(" et ")}.`
+      : "Votre commande a ete enregistree. BS3 la retrouvera dans l'espace administrateur.";
 
     res.status(201).json({
       success: true,
@@ -113,7 +122,8 @@ export async function createOrder(req, res, next) {
       data: {
         id: order._id,
         emailNotification: order.emailNotification,
-        smsNotification: order.smsNotification
+        smsNotification: order.smsNotification,
+        whatsappNotification: order.whatsappNotification
       }
     });
   } catch (error) {

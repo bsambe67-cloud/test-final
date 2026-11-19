@@ -26,6 +26,12 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  if (req.is("application/json") && (!req.body || typeof req.body !== "object" || Array.isArray(req.body))) {
+    return res.status(400).json({ success: false, message: "Le corps JSON doit être un objet." });
+  }
+  next();
+});
 
 app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "API BS3 opérationnelle." });

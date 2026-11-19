@@ -4,15 +4,19 @@ import Product from "../models/Product.js";
 export async function getProducts(req, res, next) {
   try {
     const { search = "", category = "", available } = req.query;
+    // Express can parse repeated query parameters as arrays. Ignore malformed
+    // values instead of calling string methods on them and returning a 500.
+    const searchText = typeof search === "string" ? search.trim() : "";
+    const categoryName = typeof category === "string" ? category.trim() : "";
     const filter = {};
-    if (search.trim()) {
+    if (searchText) {
       filter.$or = [
-        { name: { $regex: search.trim(), $options: "i" } },
-        { description: { $regex: search.trim(), $options: "i" } },
-        { category: { $regex: search.trim(), $options: "i" } }
+        { name: { $regex: searchText, $options: "i" } },
+        { description: { $regex: searchText, $options: "i" } },
+        { category: { $regex: searchText, $options: "i" } }
       ];
     }
-    if (category.trim() && category !== "Toutes") filter.category = category;
+    if (categoryName && categoryName !== "Toutes") filter.category = categoryName;
     if (available === "true") filter.available = true;
     if (available === "false") filter.available = false;
 
@@ -54,7 +58,16 @@ export async function updateProduct(req, res, next) {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ success: false, message: "Identifiant produit invalide." });
     }
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const allowedFields = ["name", "category", "price", "description", "image", "available"];
+    const updates = Object.fromEntries(
+      allowedFields
+        .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map((field) => [field, req.body[field]])
+    );
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: "Aucun champ produit valide à modifier." });
+    }
+    const product = await Product.findByIdAndUpdate(req.params.id, updates, {
       new: true, runValidators: true
     });
     if (!product) return res.status(404).json({ success: false, message: "Produit introuvable." });

@@ -1,9 +1,17 @@
-// Adresse de l'API backend
-export const API_URL =
-  (import.meta.env.VITE_API_URL || "https://bs3-backend.onrender.com/api").replace(
-    /\/$/,
-    ""
-  );
+// In a production build, localhost points to each visitor's own computer.
+// Ignore a local development URL accidentally included in the production env.
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const localApiUrl = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i;
+const productionApiUrl = "https://bs3-backend.onrender.com/api";
+const developmentApiUrl = "http://localhost:5000/api";
+
+export const API_URL = (
+  configuredApiUrl && !(import.meta.env.PROD && localApiUrl.test(configuredApiUrl))
+    ? configuredApiUrl
+    : import.meta.env.PROD
+      ? productionApiUrl
+      : developmentApiUrl
+).replace(/\/$/, "");
 
 // Récupérer le jeton de connexion de l'administrateur
 function getAuthHeaders() {

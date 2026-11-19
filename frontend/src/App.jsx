@@ -121,8 +121,13 @@ export default function App() {
   const refreshProducts = useCallback(async () => {
     try {
       const data = await getProducts();
-      setProducts(data);
-      setApiError(false);
+      if (data.length > 0) {
+        setProducts(data);
+        setApiError(false);
+      } else {
+        setProducts(demoProducts);
+        setApiError(true);
+      }
     } catch {
       setApiError(true);
       setProducts((current) => current.length ? current : demoProducts);

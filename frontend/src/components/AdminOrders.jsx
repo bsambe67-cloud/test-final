@@ -14,6 +14,12 @@ const smsStatus = {
   not_configured: "SMS non configure"
 };
 
+const whatsappStatus = {
+  sent: "WhatsApp envoyé",
+  failed: "Échec WhatsApp",
+  not_configured: "WhatsApp non configuré"
+};
+
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +78,9 @@ export default function AdminOrders() {
                     </span>
                     <span className={`order-email-status ${order.smsNotification || "not_configured"}`}>
                       {smsStatus[order.smsNotification] || "Statut SMS inconnu"}
+                    </span>
+                    <span className={`order-email-status ${order.whatsappNotification || "not_configured"}`}>
+                      {whatsappStatus[order.whatsappNotification] || "Statut WhatsApp inconnu"}
                     </span>
                   </div>
                 </div>

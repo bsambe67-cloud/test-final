@@ -3,7 +3,9 @@ import nodemailer from "nodemailer";
 function createTransporter() {
   const mailPort = Number(process.env.MAIL_PORT || 465);
   const mailUser = process.env.MAIL_USER || "bsambe67@gmail.com";
-  const mailPassword = process.env.MAIL_PASSWORD;
+  // Google displays app passwords in groups separated by spaces; SMTP expects
+  // the actual 16-character password without those visual separators.
+  const mailPassword = process.env.MAIL_PASSWORD?.replace(/\s+/g, "");
 
   if (!mailPassword) {
     throw new Error("MAIL_PASSWORD est absente de la configuration.");
@@ -15,6 +17,9 @@ function createTransporter() {
   return nodemailer.createTransport({
     host: process.env.MAIL_HOST || "smtp.gmail.com",
     port: mailPort,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
     secure: process.env.MAIL_SECURE
       ? process.env.MAIL_SECURE === "true"
       : mailPort === 465,
@@ -44,7 +49,7 @@ function escapeHtml(value) {
 export async function sendOrderNotification(order) {
   const mailPort = Number(process.env.MAIL_PORT || 465);
   const mailUser = process.env.MAIL_USER || "bsambe67@gmail.com";
-  const mailPassword = process.env.MAIL_PASSWORD;
+  const mailPassword = process.env.MAIL_PASSWORD?.replace(/\s+/g, "");
   const notificationEmail = process.env.ORDER_NOTIFICATION_EMAIL || "bsambe67@gmail.com";
 
   if (!mailPassword) {
